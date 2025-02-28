@@ -9,7 +9,7 @@
 `BrachistochroneCalculator.py`
 `BrachistochroneCalculator.jsx`
 
-Python version saves a csv and markdown file with the results of the brachistochrone trajectories at 1/3g (example below.) The .jsx is a React component version. Hosted on https://overvieweffekt.com/expanse-calculators.
+Python version saves a csv and markdown file with the results of the brachistochrone trajectories at 1/3g (example below.) The .jsx is a React component version. Hosted on https://overvieweffekt.com/.
 
 ***
 
