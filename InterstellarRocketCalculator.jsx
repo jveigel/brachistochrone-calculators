@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
+const VERSION = "v0.1";
 
 const InterstellarRocketCalculator = () => {
   // Constants
@@ -170,7 +171,8 @@ const InterstellarRocketCalculator = () => {
       primary: true,
       min_val: 100,
       min_error: "This calculator is quite useless for such small distances. Try travel a bit further.",
-      help_text: true
+      help_text: true,
+      def_val: "11.2"
     },
     acceleration: {
       lbl: "Acceleration",
@@ -190,14 +192,14 @@ const InterstellarRocketCalculator = () => {
       help_text: true
     },
     max_velocity: {
-      lbl: "Maximum velocity",
+      lbl: "Maximum velocity (Δv/2)",
       calc: calcMaxVelocity,
       parameters: ["acceleration", "observer_time"],
       units: {
         "kilometers per hour": 0.27777777777777777777,
         "meters per second": 1,
         "kilometers per second": 1000,
-        "speed of light": SPEED_OF_LIGHT
+        "speed of light (c)": SPEED_OF_LIGHT
       },
       ajaxValues: "velocities",
       primary: false,
@@ -208,7 +210,7 @@ const InterstellarRocketCalculator = () => {
       help_text: true
     },
     observer_time: {
-      lbl: "Observer time elapsed during journey",
+      lbl: "Observer time elapsed",
       calc: calcObserverTime,
       parameters: ["acceleration", "distance"],
       units: {
@@ -223,7 +225,7 @@ const InterstellarRocketCalculator = () => {
       help_text: true
     },
     traveler_time: {
-      lbl: "Traveler time elapsed during journey",
+      lbl: "Ship time elapsed",
       calc: calcTotalTravelerTime,
       parameters: ["acceleration", "distance"],
       units: {
@@ -238,15 +240,26 @@ const InterstellarRocketCalculator = () => {
       help_text: true
     },
     spacecraft_mass: {
-      lbl: "Payload (spacecraft mass without fuel)",
+      lbl: "Ship Dry Mass",
       calc: null,
       units: {
         "grams": 0.001,
         "kilograms": 1,
-        "tonnes": 1000
+        "tons": 1000
       },
       primary: true,
       def_val: "25000",
+      help_text: true
+    },
+    fuel_mass: {
+      lbl: "Wet Mass (Fuel Mass)",
+      calc: calcFuelMass,
+      parameters: ["max_velocity", "spacecraft_mass", "fuel_conversion_rate"],
+      units: {
+        "kg": 1,
+        "tons": 1000
+      },
+      primary: false,
       help_text: true
     },
     fuel_conversion_rate: {
@@ -261,19 +274,8 @@ const InterstellarRocketCalculator = () => {
       def_val: "0.008",
       help_text: true
     },
-    fuel_mass: {
-      lbl: "Fuel mass",
-      calc: calcFuelMass,
-      parameters: ["max_velocity", "spacecraft_mass", "fuel_conversion_rate"],
-      units: {
-        "kg": 1,
-        "tonnes": 1000
-      },
-      primary: false,
-      help_text: true
-    },
     traveler_length: {
-      lbl: "Length of spacecraft at start of journey",
+      lbl: "Length of spacecraft at start",
       calc: calcTravelerLength,
       parameters: ["observer_length", "max_velocity"],
       units: {
@@ -283,7 +285,7 @@ const InterstellarRocketCalculator = () => {
         "kilometers": 1000
       },
       primary: true,
-      def_val: "1",
+      def_val: "100",
       help_text: true
     },
     observer_length: {
@@ -306,38 +308,46 @@ const InterstellarRocketCalculator = () => {
     initializeFields();
   }, []);
   
-  // Initialize fields function
-  const initializeFields = () => {
-    const initialFields = {};
-    const initialHelpVisible = {};
-    
-    for (const fieldName in fieldDefinitions) {
-      const fieldDef = fieldDefinitions[fieldName];
-      
-      // Find default unit
-      let currentUnit = "";
-      for (const unit in fieldDef.units) {
-        if (fieldDef.units[unit] === 1) {
-          currentUnit = unit;
-          break;
-        }
-      }
-      
-      initialFields[fieldName] = {
-        ...fieldDef,
-        value: fieldDef.def_val ? parseFloat(fieldDef.def_val) * fieldDef.units[currentUnit] : "",
-        displayValue: fieldDef.def_val || "",
-        current_unit: currentUnit,
-        changed: false,
-        set: false
-      };
-      
-      initialHelpVisible[fieldName] = false;
-    }
-    
-    setFields(initialFields);
-    setHelpVisible(initialHelpVisible);
+  // Modified initializeFields function to set specific default units
+const initializeFields = () => {
+  const initialFields = {};
+  const initialHelpVisible = {};
+  
+  // Define default units for each field
+  const defaultUnits = {
+    distance: "light-years",
+    acceleration: "m/s^2",  // keeping the same
+    max_velocity: "speed of light (c)", 
+    observer_time: "years",
+    traveler_time: "years",
+    spacecraft_mass: "tons",
+    fuel_conversion_rate: "kg x m x m", // keeping the same
+    fuel_mass: "tons",
+    traveler_length: "meters", // keeping the same
+    observer_length: "meters"  // keeping the same
   };
+  
+  for (const fieldName in fieldDefinitions) {
+    const fieldDef = fieldDefinitions[fieldName];
+    
+    // Use the predefined default unit
+    const currentUnit = defaultUnits[fieldName] || Object.keys(fieldDef.units)[0];
+    
+    initialFields[fieldName] = {
+      ...fieldDef,
+      value: fieldDef.def_val ? parseFloat(fieldDef.def_val) * fieldDef.units[currentUnit] : "",
+      displayValue: fieldDef.def_val || "",
+      current_unit: currentUnit,
+      changed: false,
+      set: false
+    };
+    
+    initialHelpVisible[fieldName] = false;
+  }
+  
+  setFields(initialFields);
+  setHelpVisible(initialHelpVisible);
+};
   
   // Handle input change
   const handleInputChange = (e, fieldName) => {
@@ -507,9 +517,13 @@ const InterstellarRocketCalculator = () => {
   
   // Render function
   return (
-    <div className="w-full max-w-4xl mx-auto bg-zinc-900 border border-zinc-800 rounded-lg shadow-lg">
+    
+    
+    <div className="w-full max-w-4xl mx-auto bg-zinc-900 border border-zinc-800 rounded-lg shadow-lg mb">
       <div className="p-6">
-        <h2 className="text-center text-2xl text-zinc-100 mb-6">Relativistic Space Travel Calculator</h2>
+        <h2 className="text-center text-2xl text-zinc-100 mb-6">Relativistic Space Travel Calculator 
+        <span className="text-base font-normal text-sky-400"> {VERSION}</span>
+        </h2>
         
         <div className="space-y-6">
           {errorMessage && (
