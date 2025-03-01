@@ -1,8 +1,47 @@
 import React, { useState, useEffect } from 'react';
 
-const VERSION = "v0.1";
+const VERSION = "v0.2";
 
-const InterstellarRocketCalculator = () => {
+// Add help text definitions
+const helpText = {
+  distance: `This is the distance from earth to your destination. All objects in the database matching that start with the letters you have typed will appear. Select the one you want. Distances are approximate because the planets' positions change continuously relative to the earth.
+
+If you leave distance blank, it will be calculated if you enter the observer time elapsed and the traveler's maximum velocity.`,
+
+  acceleration: `This is the constant acceleration of the traveler's spacecraft. Half way through the journey, the spacecraft starts decelerating at the same rate.
+
+If you leave the acceleration blank, it will be calculated using Newton's laws of motion (depending on which fields have values).
+
+This is increasingly inaccurate as you approach the speed of light, so for large distances, such as to the nearest stars, it is better to enter the acceleration manually.
+
+If a spacecraft accelerates constantly at 1g (9.8m/s²) the travelers on board can experience earth-like gravity. Unfortunately interstellar travel at this acceleration will likely never be achieved because of the huge amount of energy required. It is not possible to travel to the nearest stars at this acceleration if the fuel must be carried onboard the spacecraft, no matter what kind of fuel is used.`,
+
+  max_velocity: `This is the maximum velocity the spacecraft will reach, from the perspective of an observer on earth. This occurs when the spacecraft is half way to its destination.`,
+
+  observer_time: `This is the time elapsed for the whole journey from the observer on earth's time frame.`,
+
+  traveler_time: `This is the time elapsed for the whole journey from the perspective of the spacecraft.`,
+
+  spacecraft_mass: `This is the mass of the spacecraft excluding its fuel. The default value of 25,000kg is approximately the maximum payload of the Endeavour space shuttle.
+
+Note that if this field is blanked out it is not calculated. This field must have a value if you want energy and fuel mass to be calculated.
+
+Also note that if the fuel mass is calculated to be more than the mass of your spacecraft, then your trip cannot be done unless you extract fuel from space. If your fuel mass is more than half the mass of your spacecraft, you're probably on a one way trip, so take enough food, books and episodes of Star Trek to last the rest of your life.`,
+
+  fuel_conversion_rate: `The fuel conversion rate is the efficiency with which your spacecraft's fuel is converted into energy. At today's fuel conversion rates there is no prospect of sending a spacecraft to another star in a reasonable period of time. Advances in technologies such as nuclear fusion are needed first.
+
+The default fuel conversion rate of 0.008 is for hydrogen into helium fusion. David Oesper explains that this rate assumes 100% of the fuel goes into propelling the spacecraft, but there will be energy losses which will require a greater amount of fuel than this.
+
+If you leave this field blank but enter the fuel mass, it is calculated by dividing the given fuel mass by what the fuel mass would be if it were perfectly efficient (i.e. a conversion rate of 1.0).`,
+
+  fuel_mass: `This is the mass of the fuel needed for your journey.`,
+
+  traveler_length: `This is the length of the spacecraft at the beginning of the journey. Note that the spacecraft length always stays the same for the people in it.`,
+
+  observer_length: `This is the length of the spacecraft from the observer on earth's perspective. Of course spacecrafts are small, so it would be impossible to see a spacecraft from earth on an interstellar voyage.`
+};
+
+const InterstellarRelativisticRocketCalculator = () => {
   // Constants
   const SPEED_OF_LIGHT = 299792458;
   const SPEED_OF_LIGHT_SQUARED = 89875517873681760;
@@ -19,7 +58,7 @@ const InterstellarRocketCalculator = () => {
   // State
   const [fields, setFields] = useState({});
   const [errorMessage, setErrorMessage] = useState("");
-  const [helpVisible, setHelpVisible] = useState({});
+  const [hoveredField, setHoveredField] = useState(null);
   
   // Define calculation functions
   const calcVelocity = (parameters) => {
@@ -311,7 +350,6 @@ const InterstellarRocketCalculator = () => {
   // Modified initializeFields function to set specific default units
 const initializeFields = () => {
   const initialFields = {};
-  const initialHelpVisible = {};
   
   // Define default units for each field
   const defaultUnits = {
@@ -341,12 +379,9 @@ const initializeFields = () => {
       changed: false,
       set: false
     };
-    
-    initialHelpVisible[fieldName] = false;
   }
   
   setFields(initialFields);
-  setHelpVisible(initialHelpVisible);
 };
   
   // Handle input change
@@ -387,14 +422,6 @@ const initializeFields = () => {
         displayValue: newValue,
         current_unit: newUnit
       }
-    }));
-  };
-  
-  // Toggle help text visibility
-  const toggleHelp = (fieldName) => {
-    setHelpVisible(prev => ({
-      ...prev,
-      [fieldName]: !prev[fieldName]
     }));
   };
   
@@ -515,87 +542,125 @@ const initializeFields = () => {
     }
   };
   
+  // When help text is visible, show it in a tooltip/popover
+  const renderHelpText = (fieldName) => {
+    if (hoveredField !== fieldName) return null;
+
+    return (
+      <div className="absolute z-10 mt-2 p-4 bg-zinc-800 rounded-lg shadow-lg border border-zinc-700 text-sm text-zinc-300 w-[300px]">
+        {helpText[fieldName].split('\n\n').map((paragraph, i) => (
+          <p key={i} className="mb-3 last:mb-0">{paragraph}</p>
+        ))}
+      </div>
+    );
+  };
+  
   // Render function
   return (
-    
-    
-    <div className="w-full max-w-4xl mx-auto bg-zinc-900 border border-zinc-800 rounded-lg shadow-lg mb">
+    <div className="bg-zinc-900 border border-zinc-800 rounded-lg shadow-lg">
       <div className="p-6">
-        <h2 className="text-center text-2xl text-zinc-100 mb-6">Relativistic Space Travel Calculator 
-        <span className="text-base font-normal text-sky-400"> {VERSION}</span>
+        <h2 className="text-2xl text-zinc-100 mb-6 flex items-center gap-2">
+          Interstellar Relativistic Rocket Calculator
+          <span className="text-base font-normal text-sky-400">{VERSION}</span>
         </h2>
-        
-        <div className="space-y-6">
-          {errorMessage && (
-            <div className="bg-red-900/50 border border-red-800 text-red-200 px-4 py-3 rounded mb-4" role="alert">
-              <p>{errorMessage}</p>
-            </div>
-          )}
-          
-          <div className="space-y-4">
-            {Object.keys(fields).map((fieldName) => {
-              const field = fields[fieldName];
-              return (
-                <div key={fieldName} className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr] gap-2 items-center">
-                  <div>
-                    <label htmlFor={fieldName} className="block text-sm font-medium text-zinc-300">
-                      {field.lbl}
-                      {field.help_text && (
-                        <span 
-                          className="ml-1 cursor-pointer inline-block w-5 h-5 text-center bg-sky-900/50 text-sky-200 rounded-full hover:bg-sky-800/50"
-                          onClick={() => toggleHelp(fieldName)}
-                        >
-                          ?
-                        </span>
-                      )}
-                    </label>
-                    {helpVisible[fieldName] && (
-                      <div className="mt-1 p-2 bg-zinc-800 rounded text-sm text-zinc-300 border border-zinc-700">
-                        Help information for {field.lbl}
-                      </div>
-                    )}
-                  </div>
-                  <input
-                    id={fieldName}
-                    type="text"
-                    value={field.displayValue || ""}
-                    onChange={(e) => handleInputChange(e, fieldName)}
-                    className="px-2 py-1 bg-zinc-800 border border-zinc-700 rounded text-zinc-200 focus:border-sky-600 focus:ring-1 focus:ring-sky-600"
-                  />
-                  <select
-                    value={field.current_unit}
-                    onChange={(e) => handleUnitChange(e, fieldName)}
-                    className="px-2 py-1 bg-zinc-800 border border-zinc-700 rounded text-zinc-200 focus:border-sky-600 focus:ring-1 focus:ring-sky-600"
-                  >
-                    {Object.keys(field.units).map((unit) => (
-                      <option key={unit} value={unit} className="bg-zinc-800">
-                        {unit}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              );
-            })}
-            
-            <div className="flex justify-center space-x-4 mt-6">
-              <button 
-                onClick={calculateValues}
-                className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-zinc-100 rounded"
-              >
-                Calculate
-              </button>
-              <button 
-                onClick={clearAll}
-                className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-zinc-200 rounded"
-              >
-                Reset
-              </button>
-            </div>
+
+        {errorMessage && (
+          <div className="bg-red-900/50 border border-red-800 text-red-200 px-4 py-3 rounded mb-6" role="alert">
+            <p>{errorMessage}</p>
           </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+          {/* Input Fields */}
+          {Object.keys(fields).map((fieldName) => {
+            const field = fields[fieldName];
+            return (
+              <div key={fieldName} className="space-y-2 relative">
+                <div className="flex items-center gap-2">
+                  <label htmlFor={fieldName} className="text-sm font-medium text-zinc-300">
+                    {field.lbl}
+                  </label>
+                  {field.help_text && (
+                    <div 
+                      className="group relative"
+                      onMouseEnter={() => setHoveredField(fieldName)}
+                      onMouseLeave={() => setHoveredField(null)}
+                      onFocus={() => setHoveredField(fieldName)}
+                      onBlur={() => setHoveredField(null)}
+                    >
+                      <button 
+                        className="inline-flex items-center justify-center w-5 h-5 text-center text-sky-400/70 hover:text-sky-300 transition-colors"
+                        type="button"
+                        aria-label={`Help for ${field.lbl}`}
+                      >
+                        <svg 
+                          viewBox="0 0 16 16" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          className="w-4 h-4"
+                        >
+                          <circle cx="8" cy="8" r="7" strokeWidth="1.5" />
+                          <path d="M8 12V7.5" strokeWidth="1.5" strokeLinecap="round" />
+                          <circle cx="8" cy="5" r="0.5" fill="currentColor" stroke="none" />
+                        </svg>
+                      </button>
+                      {renderHelpText(fieldName)}
+                    </div>
+                  )}
+                </div>
+                <input
+                  id={fieldName}
+                  type="text"
+                  value={field.displayValue || ""}
+                  onChange={(e) => handleInputChange(e, fieldName)}
+                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-zinc-200 focus:border-sky-600 focus:ring-1 focus:ring-sky-600"
+                />
+                <select
+                  value={field.current_unit}
+                  onChange={(e) => handleUnitChange(e, fieldName)}
+                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-zinc-200 focus:border-sky-600 focus:ring-1 focus:ring-sky-600 text-sm"
+                >
+                  {Object.keys(field.units).map((unit) => (
+                    <option key={unit} value={unit} className="bg-zinc-800">
+                      {unit}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex justify-center gap-4 mt-8">
+          <button 
+            onClick={calculateValues}
+            className="px-6 py-2 bg-sky-600 text-white text-sm font-medium rounded-md hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500"
+          >
+            Calculate
+          </button>
+          <button 
+            onClick={clearAll}
+            className="px-6 py-2 bg-zinc-700 text-zinc-200 text-sm font-medium rounded-md hover:bg-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-500"
+          >
+            Reset
+          </button>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-6 text-xs text-zinc-400 text-right">
+          <a 
+            href="https://github.com/jveigel/interstellar-brachistochrone-calculators" 
+            className="hover:text-sky-300" 
+            target="_blank" 
+            rel="noopener noreferrer"
+          >
+            Source Code
+          </a>
         </div>
       </div>
     </div>
   );
 };
 
-export default InterstellarRocketCalculator;
+export default InterstellarRelativisticRocketCalculator;
