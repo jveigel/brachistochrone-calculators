@@ -1,4 +1,4 @@
-# Interstellar and Brachistochrone Solar System Calculators
+# Brachistochrone Interstellar and Solar System Calculators
 
 ## Scripts
 
