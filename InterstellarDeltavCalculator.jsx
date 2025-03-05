@@ -215,7 +215,7 @@ const InterstellarDeltavCalculator = () => {
       // Relativistic effects
       const relativistic = calculateRelativisticTravelTime(distanceKm, dv);
       const maxVelocity = getMaxVelocity(dv);
-      const lightSpeedPercentage = (maxVelocity / CONSTANTS.C) * 100;
+      const lightSpeedPercentage = (dv / CONSTANTS.C) * 100;
       
       return {
         star,
@@ -281,7 +281,7 @@ const InterstellarDeltavCalculator = () => {
             {/* Delta-V Control */}
             <div>
               <label className="block text-sm font-medium text-zinc-300 mb-1.5">
-                Delta-v: {formatNumber(deltaV)} km/s ({(getMaxVelocity(deltaV) / CONSTANTS.C * 100).toFixed(2)}% of light speed)
+                Delta-v: {formatNumber(deltaV)} km/s ({(deltaV / CONSTANTS.C * 100).toFixed(2)}% of light speed)
               </label>
               <input
                 type="range"
@@ -333,7 +333,7 @@ const InterstellarDeltavCalculator = () => {
                 </li>
                 <li className="flex justify-between">
                   <span className="text-zinc-400">% of light speed:</span>
-                  <span className="font-medium text-zinc-200">{(getMaxVelocity(deltaV) / CONSTANTS.C * 100).toFixed(2)}%</span>
+                  <span className="font-medium text-zinc-200">{(deltaV / CONSTANTS.C * 100).toFixed(2)}%</span>
                 </li>
               </ul>
             </div>
