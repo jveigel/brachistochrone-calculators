@@ -248,7 +248,7 @@ const InterstellarDeltavCalculator = () => {
   };
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-lg shadow-lg">
+    <div className="bg-zinc-900 border border-zinc-800 rounded-sm shadow-lg max-w-none">
       <div className="p-6">
         <h2 className="text-2xl text-zinc-100 mb-6 flex items-baseline gap-2">
           Interstellar Delta-v Calculator

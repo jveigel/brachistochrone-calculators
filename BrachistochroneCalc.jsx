@@ -47,8 +47,8 @@ const formatNumber = (number, decimals = 0) => {
 
 // G-force health status thresholds
 const G_FORCE_THRESHOLDS = [
-  { threshold: 16, message: "Red goo.", color: "bg-red-500" },
-  { threshold: 10, message: "Sustained 10g even with G-Juice likely deadly.", color: "bg-orange-500" },
+  { threshold: 18, message: "You've got 10 seconds of consciousness. Then about 4 minutes till brain death.", color: "bg-red-500" },
+  { threshold: 10, message: "Sustained 10g+ (even with G-Juice) is not advisable.", color: "bg-orange-500" },
   { threshold: 1.5, message: "Dangerous to human health.", color: "bg-yellow-500" },
   { threshold: 0, message: "Safe for human travel.", color: "text-green-500" }
 ];
@@ -264,7 +264,7 @@ const BrachistochroneCalc = () => {
               {/* Health Status Banner */}
               <div className={`mt-1 mb-3 p-2 ${healthStatus.color} text-white text-sm font-medium rounded-md shadow`}>
                 <div className="flex items-center">
-                  {gValue >= 16 && (
+                  {gValue >= 18 && (
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                     </svg>
@@ -309,8 +309,8 @@ const BrachistochroneCalc = () => {
                 <div className="absolute left-0 right-0 flex justify-between">
                   <span className="text-xs text-zinc-500">0.1g</span>
                   <span className="absolute left-[7%] w-1 h-3 bg-yellow-500" title="1.5g - Dangerous to human health"></span>
-                  <span className="absolute left-[50%] w-1 h-3 bg-orange-500" title="10g - Likely deadly"></span>
-                  <span className="absolute left-[80%] w-1 h-3 bg-red-500" title="16g - Red goo"></span>
+                  <span className="absolute left-[50%] w-1 h-3 bg-orange-500" title="10g - Not advisable"></span>
+                  <span className="absolute left-[93%] w-1 h-3 bg-red-500" title="18g - Likely deadly"></span>
                   <span className="text-xs text-zinc-500">20g</span>
                 </div>
               </div>
@@ -444,7 +444,7 @@ const BrachistochroneCalc = () => {
         {/* Footer */}
         <div className="mt-6 text-xs text-zinc-400 text-right">
           <a 
-            href="https://github.com/jveigel/interstellar-brachistochrone-calculators" 
+            href="https://github.com/jveigel/interstellar-brachistochrone-calculators/blob/main/BrachistochroneCalc.jsx" 
             className="hover:text-sky-300" 
             target="_blank" 
             rel="noopener noreferrer"

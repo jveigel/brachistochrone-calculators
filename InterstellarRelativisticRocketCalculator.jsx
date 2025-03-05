@@ -1,3 +1,5 @@
+// Based on https://spacetravel.simhub.online/
+
 import React, { useState, useEffect } from 'react';
 
 const VERSION = "v0.2";
@@ -650,7 +652,7 @@ const initializeFields = () => {
         {/* Footer */}
         <div className="mt-6 text-xs text-zinc-400 text-right">
           <a 
-            href="https://github.com/jveigel/interstellar-brachistochrone-calculators" 
+            href="https://github.com/jveigel/interstellar-brachistochrone-calculators/blob/main/InterstellarRelativisticRocketCalculator.jsx" 
             className="hover:text-sky-300" 
             target="_blank" 
             rel="noopener noreferrer"
