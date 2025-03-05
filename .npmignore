@@ -1,0 +1,24 @@
+# Git
+.git
+.gitignore
+
+# Python files
+*.py
+*.csv
+*.md.txt
+
+# Development files
+node_modules
+.DS_Store
+.env
+.env.*
+!.env.example
+
+# Editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw? 

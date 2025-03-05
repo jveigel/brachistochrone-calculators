@@ -1,0 +1,50 @@
+{
+  "name": "interstellar-brachistochrone-calculators",
+  "version": "0.1.0",
+  "description": "Interactive calculators for interstellar travel using brachistochrone trajectories",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublishOnly": "npm test",
+    "version": "git add -A",
+    "postversion": "git push && git push --tags"
+  },
+  "keywords": [
+    "space",
+    "interstellar",
+    "brachistochrone",
+    "calculator",
+    "physics",
+    "astro",
+    "react"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "peerDependencies": {
+    "tailwindcss": "^3.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jveigel/interstellar-brachistochrone-calculators"
+  },
+  "files": [
+    "index.js",
+    "BrachistochroneCalc.jsx",
+    "InterstellarDeltavCalculator.jsx",
+    "InterstellarRelativisticRocketCalculator.jsx",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+} 
