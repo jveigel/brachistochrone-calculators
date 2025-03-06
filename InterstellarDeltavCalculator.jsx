@@ -50,12 +50,27 @@ const InterstellarDeltavCalculator = () => {
   const [results, setResults] = useState(null);
   const [allResults, setAllResults] = useState([]);
   const [showMatrix, setShowMatrix] = useState(false);
+  const [showExplanation, setShowExplanation] = useState(false);
 
   // Helper function to format years
   const formatYears = (years) => {
-    const y = Math.floor(years);
-    const months = Math.floor((years - y) * 12);
-    return years < 1 ? `${months} months` : `${y} years, ${months} months`;
+    if (!years || years < 0) return '0 months';
+    
+    if (years < 0.01) { // Less than about 3-4 days
+      const hours = Math.round(years * 365.25 * 24);
+      return `${hours} hours`;
+    } else if (years < 0.08) { // Less than about a month
+      const days = Math.round(years * 365.25);
+      return `${days} days`;
+    } else if (years < 1) {
+      const months = Math.floor(years * 12);
+      const days = Math.floor((years * 12 - months) * 30);
+      return days > 0 ? `${months} months, ${days} days` : `${months} months`;
+    } else {
+      const y = Math.floor(years);
+      const months = Math.floor((years - y) * 12);
+      return months > 0 ? `${y} years, ${months} months` : `${y} years`;
+    }
   };
 
   const formatNumber = (number, decimals = 0) => {
@@ -76,7 +91,7 @@ const InterstellarDeltavCalculator = () => {
     // For 72,000 km/s delta-v, we use 0.0014 km/s² to get ~100 years to Tau Ceti
     const baseAcceleration = 0.0014; // km/s² at 72,000 km/s delta-v
     const scaleFactor = dv / 72000;
-    const acceleration = baseAcceleration * scaleFactor; 
+    const acceleration = baseAcceleration * scaleFactor * (1 + 0.1 * Math.log10(dv / 1000)); // Add a logarithmic component to make it more responsive
     
     // Time to reach max velocity (t = v/a)
     const accelerationTime = maxVelocity / acceleration;
@@ -160,7 +175,7 @@ const InterstellarDeltavCalculator = () => {
       // Calculate based on the same acceleration as the classical case
       const baseAcceleration = 0.0014; // km/s² at 72,000 km/s delta-v
       const scaleFactor = dv / 72000;
-      acceleration = baseAcceleration * scaleFactor;
+      acceleration = baseAcceleration * scaleFactor * (1 + 0.1 * Math.log10(dv / 1000)); // Add a logarithmic component to make it more responsive
       
       // Rest of the calculation remains similar but uses the new effectiveMaxVelocity
       const accelerationTime = effectiveMaxVelocity / acceleration;
@@ -215,7 +230,7 @@ const InterstellarDeltavCalculator = () => {
       // Relativistic effects
       const relativistic = calculateRelativisticTravelTime(distanceKm, dv);
       const maxVelocity = getMaxVelocity(dv);
-      const lightSpeedPercentage = (dv / CONSTANTS.C) * 100;
+      const lightSpeedPercentage = (maxVelocity / CONSTANTS.C) * 100;
       
       return {
         star,
@@ -257,93 +272,131 @@ const InterstellarDeltavCalculator = () => {
         
         <div className="grid md:grid-cols-2 gap-6">
           {/* Left Column - Parameters */}
-          <div className="space-y-6">
-            <h3 className="text-xl font-semibold text-zinc-200">Parameters</h3>
-            
-            {/* Target Star Selection */}
-            <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-1.5">
-                Select Target Star
-              </label>
-              <select
-                value={selectedStar}
-                onChange={(e) => setSelectedStar(e.target.value)}
-                className="block w-full px-3 py-2 bg-zinc-700 border border-zinc-600 text-zinc-200 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500"
-              >
-                {STAR_ORDER.map(star => (
-                  <option key={star} value={star}>
-                    {star} ({STARS[star].distance.toFixed(2)} ly)
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            {/* Delta-V Control */}
-            <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-1.5">
-                Delta-v: {formatNumber(deltaV)} km/s ({(deltaV / CONSTANTS.C * 100).toFixed(2)}% of light speed)
-              </label>
-              <input
-                type="range"
-                min="1000"
-                max="200000"
-                step="1000"
-                value={deltaV}
-                onChange={handleDeltaVChange}
-                className="w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-sky-500 mb-1.5"
-              />
-              <div className="flex justify-between items-center gap-2">
-                <span className="text-xs text-zinc-500">1,000 km/s</span>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => setDeltaV(72000)}
-                    className="px-3 py-1 text-xs font-medium rounded-md bg-zinc-700 text-zinc-300 hover:bg-zinc-600 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                  >
-                    Reset to 72,000 km/s
-                  </button>
-                  <button 
-                    onClick={() => setDeltaV(HAIL_MARY.DELTA_V)}
-                    className={`px-3 py-1 text-xs font-medium rounded-md focus:outline-none focus:ring-2 ${
-                      deltaV === HAIL_MARY.DELTA_V 
-                        ? 'bg-amber-600 text-white hover:bg-amber-700 focus:ring-amber-500' 
-                        : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600 focus:ring-sky-500'
-                    }`}
-                    title={`${HAIL_MARY.ACCELERATION_G}g for ${HAIL_MARY.MISSION_YEARS} years = ${HAIL_MARY.DELTA_V.toFixed(0)} km/s. The ship doesn't actually go 3x the speed of light, but it does use that much Delta-v. I make no guarantees about the accuracy of this calculation.`}
-                  >
-                    Project Hail Mary Mode
-                  </button>
+          <div>
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold text-zinc-200">Select Target Star</h3>
+              
+              {/* Target Star Selection */}
+              <div>
+                <select
+                  value={selectedStar}
+                  onChange={(e) => setSelectedStar(e.target.value)}
+                  className="block w-full px-3 py-2 bg-zinc-700 border border-zinc-600 text-zinc-200 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500"
+                >
+                  {STAR_ORDER.map(star => (
+                    <option key={star} value={star}>
+                      {star} ({STARS[star].distance.toFixed(2)} ly)
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              {/* Delta-V Control */}
+              <div className="mt-0">
+                <label className="block text-sm font-medium text-zinc-300 mb-1.5">
+                  Delta-v: {formatNumber(deltaV)} km/s
+                </label>
+                <input
+                  type="range"
+                  min="1000"
+                  max="200000"
+                  step="1000"
+                  value={deltaV}
+                  onChange={handleDeltaVChange}
+                  className="w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-sky-500 mb-1.5"
+                />
+                <div className="flex justify-between items-center gap-2">
+                  <span className="text-xs text-zinc-500">1,000 km/s</span>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => setDeltaV(72000)}
+                      className={`px-3 py-1 text-xs font-medium rounded-md ${
+                        deltaV === 72000 
+                          ? 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600' 
+                          : 'bg-sky-600 text-white hover:bg-sky-700'
+                      } focus:outline-none focus:ring-2 focus:ring-sky-500`}
+                    >
+                      Reset to 72,000 km/s
+                    </button>
+                    <button 
+                      onClick={() => setDeltaV(HAIL_MARY.DELTA_V)}
+                      className={`px-3 py-1 text-xs font-medium rounded-md focus:outline-none focus:ring-2 ${
+                        deltaV === HAIL_MARY.DELTA_V 
+                          ? 'bg-amber-600 text-white hover:bg-amber-700 focus:ring-amber-500' 
+                          : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600 focus:ring-sky-500'
+                      }`}
+                      title={`${HAIL_MARY.ACCELERATION_G}g for ${HAIL_MARY.MISSION_YEARS} years = ${HAIL_MARY.DELTA_V.toFixed(0)} km/s. The ship doesn't actually go 3x the speed of light, but it does use that much Delta-v. I make no guarantees about the accuracy of this calculation.`}
+                    >
+                      Project Hail Mary Mode
+                    </button>
+                  </div>
+                  <span className="text-xs text-zinc-500">200,000 km/s</span>
                 </div>
-                <span className="text-xs text-zinc-500">200,000 km/s</span>
               </div>
             </div>
-            
-            {/* Flight Profile Card */}
-            <div className="bg-zinc-800 rounded-lg p-4">
-              <h4 className="text-sm font-medium text-zinc-300 mb-2">Flight Profile</h4>
-              <ul className="space-y-2 text-sm">
-                <li className="flex justify-between">
-                  <span className="text-zinc-400">Max velocity:</span>
-                  <span className="font-medium text-zinc-200">{formatNumber(getMaxVelocity(deltaV))} km/s</span>
-                </li>
-                <li className="flex justify-between">
-                  <span className="text-zinc-400">Flight plan:</span>
-                  <span className="font-medium text-zinc-200">
-                    {results?.coastYears === 0 ? 'Accelerate → Decelerate' : 'Accelerate → Cruise → Decelerate'}
-                  </span>
-                </li>
-                <li className="flex justify-between">
-                  <span className="text-zinc-400">% of light speed:</span>
-                  <span className="font-medium text-zinc-200">{(deltaV / CONSTANTS.C * 100).toFixed(2)}%</span>
-                </li>
-              </ul>
-            </div>
 
-            <button
-              onClick={() => setShowMatrix(!showMatrix)}
-              className="w-full px-4 py-2 bg-sky-600 text-white text-sm font-medium rounded-md hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500"
-            >
-              {showMatrix ? "Hide All Routes" : "Show All Routes"}
-            </button>
+            {/* Journey Phases - Only visible on desktop */}
+            <div className="hidden md:block mt-4">
+              <div className="bg-zinc-800 rounded-lg p-4">
+                <h4 className="font-medium text-zinc-300 mb-2">Journey Phases</h4>
+                <ul className="space-y-2 text-sm">
+                  {/* Journey Phases content */}
+                  <li className="flex justify-between">
+                    <span className="text-zinc-400">Flight plan:</span>
+                    <span className="font-medium text-zinc-200">
+                      {results?.coastYears === 0 ? 'Accelerate → Decelerate' : 'Accelerate → Cruise → Decelerate'}
+                    </span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span className="text-zinc-400">Acceleration:</span>
+                    <span className="font-medium text-zinc-200">
+                      {results ? (deltaV > CONSTANTS.C 
+                        ? (HAIL_MARY.ACCELERATION_G * CONSTANTS.G).toFixed(2) 
+                        : (0.0014 * (deltaV / 72000) * 1000).toFixed(2)) 
+                      : 0} m/s²
+                    </span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span className="text-zinc-400">Acceleration phase:</span>
+                    <span className="font-medium text-zinc-200">
+                      {results && typeof results.accelerationYears !== 'undefined' 
+                        ? (results.accelerationYears < 0.01 
+                            ? `${Math.round(results.accelerationYears * 365.25 * 24)} hours` 
+                            : results.accelerationYears < 0.08 
+                              ? `${Math.round(results.accelerationYears * 365.25)} days` 
+                              : formatYears(results.accelerationYears))
+                        : '0 months'}
+                    </span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span className="text-zinc-400">Coast phase:</span>
+                    <span className="font-medium text-zinc-200">
+                      {results && typeof results.coastYears !== 'undefined' 
+                        ? formatYears(results.coastYears) 
+                        : '0 months'}
+                    </span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span className="text-zinc-400">Deceleration phase:</span>
+                    <span className="font-medium text-zinc-200">
+                      {results && typeof results.accelerationYears !== 'undefined' 
+                        ? (results.accelerationYears < 0.01 
+                            ? `${Math.round(results.accelerationYears * 365.25 * 24)} hours` 
+                            : results.accelerationYears < 0.08 
+                              ? `${Math.round(results.accelerationYears * 365.25)} days` 
+                              : formatYears(results.accelerationYears))
+                        : '0 months'}
+                    </span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span className="text-zinc-400">Phase ratio:</span>
+                    <span className="font-medium text-zinc-200">
+                      {results ? Math.round((results.coastYears / results.shipYears) * 100) : 0}% coasting
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
 
           {/* Right Column - Results */}
@@ -353,14 +406,77 @@ const InterstellarDeltavCalculator = () => {
             {results && (
               <div className="space-y-4">
                 {/* Time Cards */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-4">
                   <div className="bg-zinc-700 p-3 rounded-lg">
                     <h4 className="text-sm font-medium text-zinc-400">Ship Time</h4>
-                    <p className="text-xl font-bold text-sky-400">{formatYears(results.shipYears)}</p>
+                    <p className="text-lg font-bold text-sky-400">{formatYears(results.shipYears)}</p>
                   </div>
                   <div className="bg-zinc-700 p-3 rounded-lg">
                     <h4 className="text-sm font-medium text-zinc-400">Earth Time</h4>
-                    <p className="text-xl font-bold text-sky-400">{formatYears(results.earthYears)}</p>
+                    <p className="text-lg font-bold text-sky-400">{formatYears(results.earthYears)}</p>
+                  </div>
+                </div>
+
+                {/* Journey Phases - Only visible on mobile */}
+                <div className="md:hidden">
+                  <div className="bg-zinc-800 rounded-lg p-4">
+                    <h4 className="font-medium text-zinc-300 mb-2">Journey Phases</h4>
+                    <ul className="space-y-2 text-sm">
+                      {/* Journey Phases content */}
+                      <li className="flex justify-between">
+                        <span className="text-zinc-400">Flight plan:</span>
+                        <span className="font-medium text-zinc-200">
+                          {results?.coastYears === 0 ? 'Accelerate → Decelerate' : 'Accelerate → Cruise → Decelerate'}
+                        </span>
+                      </li>
+                      <li className="flex justify-between">
+                        <span className="text-zinc-400">Acceleration:</span>
+                        <span className="font-medium text-zinc-200">
+                          {results ? (deltaV > CONSTANTS.C 
+                            ? (HAIL_MARY.ACCELERATION_G * CONSTANTS.G).toFixed(2) 
+                            : (0.0014 * (deltaV / 72000) * 1000).toFixed(2)) 
+                          : 0} m/s²
+                        </span>
+                      </li>
+                      <li className="flex justify-between">
+                        <span className="text-zinc-400">Acceleration phase:</span>
+                        <span className="font-medium text-zinc-200">
+                          {results && typeof results.accelerationYears !== 'undefined' 
+                            ? (results.accelerationYears < 0.01 
+                                ? `${Math.round(results.accelerationYears * 365.25 * 24)} hours` 
+                                : results.accelerationYears < 0.08 
+                                  ? `${Math.round(results.accelerationYears * 365.25)} days` 
+                                  : formatYears(results.accelerationYears))
+                            : '0 months'}
+                        </span>
+                      </li>
+                      <li className="flex justify-between">
+                        <span className="text-zinc-400">Coast phase:</span>
+                        <span className="font-medium text-zinc-200">
+                          {results && typeof results.coastYears !== 'undefined' 
+                            ? formatYears(results.coastYears) 
+                            : '0 months'}
+                        </span>
+                      </li>
+                      <li className="flex justify-between">
+                        <span className="text-zinc-400">Deceleration phase:</span>
+                        <span className="font-medium text-zinc-200">
+                          {results && typeof results.accelerationYears !== 'undefined' 
+                            ? (results.accelerationYears < 0.01 
+                                ? `${Math.round(results.accelerationYears * 365.25 * 24)} hours` 
+                                : results.accelerationYears < 0.08 
+                                  ? `${Math.round(results.accelerationYears * 365.25)} days` 
+                                  : formatYears(results.accelerationYears))
+                            : '0 months'}
+                        </span>
+                      </li>
+                      <li className="flex justify-between">
+                        <span className="text-zinc-400">Phase ratio:</span>
+                        <span className="font-medium text-zinc-200">
+                          {results ? Math.round((results.coastYears / results.shipYears) * 100) : 0}% coasting
+                        </span>
+                      </li>
+                    </ul>
                   </div>
                 </div>
 
@@ -373,8 +489,20 @@ const InterstellarDeltavCalculator = () => {
                       <span className="font-medium text-zinc-200">{results.distanceLy.toFixed(2)} light-years</span>
                     </li>
                     <li className="flex justify-between">
+                      <span className="text-zinc-400">Total Δv:</span>
+                      <span className="font-medium text-zinc-200">{formatNumber(deltaV)} km/s</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span className="text-zinc-400">Total Δv (% of light):</span>
+                      <span className="font-medium text-zinc-200">{(deltaV / CONSTANTS.C * 100).toFixed(2)}%c</span>
+                    </li>
+                    <li className="flex justify-between">
                       <span className="text-zinc-400">Maximum velocity:</span>
                       <span className="font-medium text-zinc-200">{formatNumber(results.maxVelocity)} km/s</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span className="text-zinc-400">Maximum veolcity (% of light):</span>
+                      <span className="font-medium text-zinc-200">{(getMaxVelocity(deltaV) / CONSTANTS.C * 100).toFixed(2)}%c</span>
                     </li>
                     <li className="flex justify-between">
                       <span className="text-zinc-400">Time dilation:</span>
@@ -382,30 +510,25 @@ const InterstellarDeltavCalculator = () => {
                     </li>
                   </ul>
                 </div>
-
-                {/* Journey Phases */}
-                <div className="bg-zinc-800 rounded-lg p-4">
-                  <h4 className="font-medium text-zinc-300 mb-2">Journey Phases</h4>
-                  <ul className="space-y-2 text-sm">
-                    <li className="flex justify-between">
-                      <span className="text-zinc-400">Acceleration phase:</span>
-                      <span className="font-medium text-zinc-200">{formatYears(results.accelerationYears)} × 2</span>
-                    </li>
-                    <li className="flex justify-between">
-                      <span className="text-zinc-400">Coast phase:</span>
-                      <span className="font-medium text-zinc-200">{formatYears(results.coastYears)}</span>
-                    </li>
-                    <li className="flex justify-between">
-                      <span className="text-zinc-400">Phase ratio:</span>
-                      <span className="font-medium text-zinc-200">
-                        {Math.round((results.coastYears / results.shipYears) * 100)}% coasting
-                      </span>
-                    </li>
-                  </ul>
-                </div>
               </div>
             )}
           </div>
+        </div>
+
+        {/* Show All Routes Button - Centered in its own row */}
+        <div className="flex justify-center mt-6 gap-4">
+          <button
+            onClick={() => setShowMatrix(!showMatrix)}
+            className="px-6 py-2 bg-zinc-700 text-zinc-300 text-sm font-medium rounded-md hover:bg-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-500"
+          >
+            {showMatrix ? "Hide All Routes" : "Show All Routes"}
+          </button>
+          <button
+            onClick={() => setShowExplanation(!showExplanation)}
+            className="px-6 py-2 bg-zinc-700 text-zinc-300 text-sm font-medium rounded-md hover:bg-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-500"
+          >
+            How It Works
+          </button>
         </div>
 
         {/* Matrix Display */}
@@ -435,6 +558,88 @@ const InterstellarDeltavCalculator = () => {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {/* Explanation Modal */}
+        {showExplanation && (
+          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+            <div className="bg-zinc-900 rounded-lg max-w-4xl max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-2xl font-bold text-zinc-100">How the Calculator Works</h2>
+                  <button 
+                    onClick={() => setShowExplanation(false)}
+                    className="text-zinc-400 hover:text-zinc-200"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                
+                <div className="space-y-6 text-zinc-300">
+                <section>
+                    <h3 className="text-xl font-semibold text-sky-400 mb-2">Limitations and Assumptions</h3>
+                    <ul className="list-disc pl-6 space-y-1">
+                      <li>Ignores propellant mass fraction and the rocket equation</li>
+                      <li>Assumes constant acceleration is possible throughout the journey</li>
+                      <li>Does not account for interstellar medium effects</li>
+                      <li>Star positions are fixed (no stellar motion)</li>
+                      <li>For Project Hail Mary mode, the ship doesn't actually travel faster than light - it uses that much delta-v due to relativistic effects and extreme time dilation</li>
+                    </ul>
+                  </section>
+                  <section>
+                    <h3 className="text-xl font-semibold text-sky-400 mb-2">Delta-v and Acceleration</h3>
+                    <p className="mb-2">Delta-v is the total change in velocity that a spacecraft can achieve with its propulsion system. In this calculator:</p>
+                    <ul className="list-disc pl-6 space-y-1">
+                      <li>The default value is 72,000 km/s (24% of light speed), which is arbitrarily based on Expanse canon.</li>
+                    </ul>
+                    
+                    <h4 className="text-lg font-medium text-sky-400 mt-3 mb-1">Acceleration Calculation:</h4>
+                    <ul className="list-disc pl-6 space-y-1">
+                      <li>Base acceleration: 0.0014 km/s² at 72,000 km/s delta-v</li>
+                      <li>Scaled based on delta-v: acceleration = baseAcceleration × (deltaV ÷ 72,000)</li>
+                      <li>Enhanced with a logarithmic component for responsiveness: acceleration × (1 + 0.1 × log₁₀(deltaV ÷ 1000))</li>
+                      <li>For Project Hail Mary mode: constant 1.5g (14.715 m/s²)</li>
+                    </ul>
+                  </section>
+                  
+                  <section>
+                  
+                    
+                    <h4 className="text-lg font-medium text-sky-400 mt-3 mb-1">Time Calculations:</h4>
+                    <ul className="list-disc pl-6 space-y-1">
+                      <li>Acceleration time = maxVelocity ÷ acceleration</li>
+                      <li>Distance covered during acceleration = ½ × acceleration × time²</li>
+                      <li>If acceleration distance {`>`} half of total distance: no coast phase</li>
+                      <li>Coast time = (total distance - 2 × acceleration distance) ÷ max velocity</li>
+                      <li>Total time = 2 × acceleration time + coast time</li>
+                    </ul>
+                  </section>
+                  
+                  <section>
+                    <h3 className="text-xl font-semibold text-sky-400 mb-2">Relativistic Effects</h3>
+                    <p className="mb-2">Velocities under 60% of light speed are not effected very much by time dilation:</p>
+                    <ul className="list-disc pl-6 space-y-1">
+                      <li><strong>Time dilation:</strong> Time passes more slowly for the spacecraft relative to Earth</li>
+                      <li><strong>Gamma factor:</strong> γ = 1 ÷ √(1 - β²), where β = v ÷ c</li>
+                      <li><strong>Ship time vs Earth time:</strong> Ship time = Earth time ÷ γ</li>
+                    </ul>
+                    
+                    <h4 className="text-lg font-medium text-sky-400 mt-3 mb-1">For Project Hail Mary Mode:</h4>
+                    <p>Uses constant proper acceleration calculations with relativistic effects:</p>
+                    <ul className="list-disc pl-6 space-y-1">
+                      <li>Proper time τ (ship time) = (c/a) × arcsinh(aT/c) where T is coordinate time</li>
+                      <li>Distance covered = (c²/a) × (√(1 + (aT/c)²) - 1)</li>
+                      <li>Maximum velocity approaches but never exceeds c (light speed)</li>
+                    </ul>
+                  </section>
+                  
+                  
+                </div>
+              </div>
             </div>
           </div>
         )}

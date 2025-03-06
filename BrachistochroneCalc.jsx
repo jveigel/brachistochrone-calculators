@@ -217,7 +217,7 @@ const BrachistochroneCalc = () => {
     <div className="bg-zinc-900 border border-zinc-800 rounded-lg shadow-lg">
       <div className="p-6">
         {/* Header */}
-        <h2 className="text-2xl text-zinc-100 mb-6 flex items-baseline gap-2">
+        <h2 className="text-2xl text-zinc-100 mb-6 flex items-center gap-2">
           Brachistochrone Calculator
           <span className="text-base font-normal text-sky-400">{VERSION}</span>
         </h2>
