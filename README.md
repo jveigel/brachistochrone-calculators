@@ -1,5 +1,7 @@
 # Brachistochrone Interstellar and Solar System Calculators
 
+Currenlty the jsx files are designed to run on an Astro site with tailwind. But I am migrating to next.js tsx files soon. 
+
 ## Scripts
 `InterstellarDeltaVCalculator.jsx` - A simple estimate of travel times based on arbitrary Delta-v ammounts. Simple relativistic hacks in the math to get reasonable estimates. 
 
