@@ -17,7 +17,7 @@ Python version saves a csv and markdown file with the results of the brachistoch
 
 `EpsteinDriveCalculator.py`
 
-Are scripts that attempt to estimate the interstellar travel times using a relativistic brachistochrone equation for the Nauvoo from the Expanse. that are completly broken
+Is a script that attempt to estimate the interstellar travel times using a relativistic brachistochrone equation for the Nauvoo from the Expanse. It is completly broken.
 
 
 
