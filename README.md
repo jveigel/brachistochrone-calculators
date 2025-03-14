@@ -2,7 +2,7 @@
 
 ## Scripts
 
-`InterstellarRocketCalculator.jsx` - Interstellar Relativistic Rocket Calculator derived from https://github.com/nathangeffen/space-travel
+`CalcInterstellarRelativisticRocket` - Interstellar Relativistic Rocket Calculator derived from https://github.com/nathangeffen/space-travel
 
 ***
 
